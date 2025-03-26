@@ -20,6 +20,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware de logging para todas as requisições
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
 // Middlewares para parsear o corpo das requisições
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -57,29 +63,36 @@ app.get('/auth', (req, res) => {
   }
 });
 
-// Handle OAuth callback
-app.get('/auth/callback', (req, res) => {
-  console.log('Received OAuth callback:', req.query);
+// Modifique o endpoint de callback para aceitar todos os métodos
+app.all('/auth/callback', (req, res) => {
+  console.log('Received OAuth callback:', {
+    method: req.method,
+    query: req.query,
+    body: req.body
+  });
   
-  // Extract the code and state
-  const code = req.query.code;
-  const state = req.query.state;
-  
-  // For MVP, just return a success page
-  res.send(`
-    <html>
-      <body>
-        <h1>Authentication Successful</h1>
-        <p>You can now close this window and return to GoHighLevel.</p>
-        <script>
-          // Close this window after 3 seconds
-          setTimeout(() => {
-            window.close();
-          }, 3000);
-        </script>
-      </body>
-    </html>
-  `);
+  // Para MVP, apenas retorna sucesso
+  if (req.method === 'GET') {
+    res.send(`
+      <html>
+        <body>
+          <h1>Authentication Successful</h1>
+          <p>You can now close this window and return to GoHighLevel.</p>
+          <script>
+            setTimeout(() => {
+              window.close();
+            }, 3000);
+          </script>
+        </body>
+      </html>
+    `);
+  } else {
+    res.json({
+      success: true,
+      message: 'OAuth callback successful',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Add token endpoint for OAuth
@@ -95,7 +108,33 @@ app.post('/oauth/token', (req, res) => {
   });
 });
 
-// Endpoint de teste melhorado
+// Reorganize a ordem das rotas /test
+app.all('/test', (req, res) => {
+  console.log('ALL /test request received via', req.method);
+  // Handle OPTIONS request for CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    return res.status(200).end();
+  }
+  
+  // Para GET e POST, delegue para os handlers específicos
+  if (req.method === 'GET') {
+    return app._router.handle(req, res);
+  }
+  if (req.method === 'POST') {
+    return app._router.handle(req, res);
+  }
+  
+  // Para outros métodos, responda aqui
+  res.json({
+    success: true,
+    message: `API connection successful (${req.method})`,
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/test', (req, res) => {
   console.log('GET /test request received');
   res.json({
@@ -110,23 +149,6 @@ app.post('/test', (req, res) => {
   res.json({
     success: true,
     message: 'API connection successful (POST)',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.all('/test', (req, res) => {
-  console.log('ALL /test request received via', req.method);
-  // Handle OPTIONS request for CORS preflight
-  if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    return res.status(200).end();
-  }
-  
-  res.json({
-    success: true,
-    message: `API connection successful (${req.method})`,
     timestamp: new Date().toISOString()
   });
 });
