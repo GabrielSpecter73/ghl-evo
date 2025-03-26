@@ -1,4 +1,3 @@
-
 // WhatsApp Evolution API to GoHighLevel Middleware
 // index.js file for Replit
 
@@ -8,6 +7,22 @@ const bodyParser = require('body-parser');
 const app = express();
 require('dotenv').config();
 
+// Configuração global de CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
+// Middlewares para parsear o corpo das requisições
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // Environment variables (set these in Replit Secrets)
@@ -80,14 +95,38 @@ app.post('/oauth/token', (req, res) => {
   });
 });
 
-// Add test endpoint for OAuth validation
-app.post('/test', (req, res) => {
-  console.log('Received test API request:', req.body);
-  
-  // For MVP, return a successful test response
+// Endpoint de teste melhorado
+app.get('/test', (req, res) => {
+  console.log('GET /test request received');
   res.json({
     success: true,
-    message: 'API connection successful',
+    message: 'API connection successful (GET)',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.post('/test', (req, res) => {
+  console.log('POST /test request received:', req.body);
+  res.json({
+    success: true,
+    message: 'API connection successful (POST)',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.all('/test', (req, res) => {
+  console.log('ALL /test request received via', req.method);
+  // Handle OPTIONS request for CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    return res.status(200).end();
+  }
+  
+  res.json({
+    success: true,
+    message: `API connection successful (${req.method})`,
     timestamp: new Date().toISOString()
   });
 });
