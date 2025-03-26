@@ -1,0 +1,60 @@
+I'll tell you exactly where to add the new code to your existing middleware.
+
+Open your `index.js` file in Replit and locate the OAuth authentication section. This is where you have the `/auth` endpoint. Add the new callback handler right after that endpoint.
+
+Here's exactly how the code should be positioned:
+
+```javascript
+// OAuth authentication endpoints
+app.get('/auth', (req, res) => {
+  console.log('Received OAuth authentication request:', req.query);
+  
+  // Extract the redirect URI and state from the query parameters
+  const redirectUri = req.query.redirect_uri || req.query.redirect_url;
+  const state = req.query.state || '';
+  
+  // For MVP, automatically redirect back with a code
+  if (redirectUri) {
+    const authCode = 'temporary_auth_code_' + Date.now();
+    const redirectUrl = `${redirectUri}?code=${authCode}&state=${state}`;
+    console.log('Redirecting to:', redirectUrl);
+    res.redirect(redirectUrl);
+  } else {
+    res.status(400).send('Missing redirect URI');
+  }
+});
+
+// Handle OAuth callback - ADD THIS NEW CODE HERE
+app.get('/auth/callback', (req, res) => {
+  console.log('Received OAuth callback:', req.query);
+  
+  // Extract the code and state
+  const code = req.query.code;
+  const state = req.query.state;
+  
+  // For MVP, just return a success page
+  res.send(`
+    <html>
+      <body>
+        <h1>Authentication Successful</h1>
+        <p>You can now close this window and return to GoHighLevel.</p>
+        <script>
+          // Close this window after 3 seconds
+          setTimeout(() => {
+            window.close();
+          }, 3000);
+        </script>
+      </body>
+    </html>
+  `);
+});
+
+// Add token endpoint for OAuth
+app.post('/oauth/token', (req, res) => {
+  // This part should already be in your code
+  // ...
+```
+
+Simply place the new code between your existing `/auth` endpoint and your `/oauth/token` endpoint. The order of endpoints doesn't technically matter, but it makes the code more organized to keep related endpoints together.
+
+After adding this code, save the file and make sure to restart your Replit application if needed.
