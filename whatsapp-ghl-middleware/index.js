@@ -108,47 +108,24 @@ app.post('/oauth/token', (req, res) => {
   });
 });
 
-// Reorganize a ordem das rotas /test
+// Rota única para /test que lida com todos os métodos HTTP
 app.all('/test', (req, res) => {
-  console.log('ALL /test request received via', req.method);
+  console.log(`${req.method} /test request received`);
+  
+  // Configure CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
   // Handle OPTIONS request for CORS preflight
   if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     return res.status(200).end();
   }
   
-  // Para GET e POST, delegue para os handlers específicos
-  if (req.method === 'GET') {
-    return app._router.handle(req, res);
-  }
-  if (req.method === 'POST') {
-    return app._router.handle(req, res);
-  }
-  
-  // Para outros métodos, responda aqui
+  // Para todos os outros métodos, retorne uma resposta de sucesso
   res.json({
     success: true,
     message: `API connection successful (${req.method})`,
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.get('/test', (req, res) => {
-  console.log('GET /test request received');
-  res.json({
-    success: true,
-    message: 'API connection successful (GET)',
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.post('/test', (req, res) => {
-  console.log('POST /test request received:', req.body);
-  res.json({
-    success: true,
-    message: 'API connection successful (POST)',
     timestamp: new Date().toISOString()
   });
 });
