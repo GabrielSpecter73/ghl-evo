@@ -223,12 +223,26 @@ app.post('/webhook/whatsapp', async (req, res) => {
 app.post('/send', async (req, res) => {
   try {
     console.log('Received send request from GoHighLevel:', JSON.stringify(req.body));
-    const { to, message, mediaUrl } = req.body;
+    
+    // Log todos os campos para depuração
+    console.log('Request body fields:', Object.keys(req.body));
+    
+    const { to, message, mediaUrl, type } = req.body;
 
-    if (!to || (!message && !mediaUrl)) {
+    // Validação de entrada aprimorada
+    if (!to) {
+      console.log('Missing required field: to');
       return res.status(400).send({ 
         status: 'error', 
-        message: 'Missing required fields (to, message, or mediaUrl)' 
+        message: 'Missing required field: to' 
+      });
+    }
+
+    if (!message && !mediaUrl) {
+      console.log('Missing both message and mediaUrl');
+      return res.status(400).send({ 
+        status: 'error', 
+        message: 'Missing required fields: either message or mediaUrl must be provided' 
       });
     }
 
@@ -240,6 +254,7 @@ app.post('/send', async (req, res) => {
 
     // Remove any non-digit characters
     formattedNumber = formattedNumber.replace(/\D/g, '');
+    console.log('Formatted number:', formattedNumber);
 
     // Create request for Evolution API
     const requestData = {
@@ -249,6 +264,8 @@ app.post('/send', async (req, res) => {
         presence: 'composing'
       }
     };
+
+    console.log('Preparing Evolution API request data:', JSON.stringify(requestData));
 
     let response;
 
@@ -279,13 +296,19 @@ app.post('/send', async (req, res) => {
 
     console.log('Evolution API response:', JSON.stringify(response.data));
 
+    // Retornar uma resposta formatada de acordo com o que o GHL espera
     res.status(200).send({ 
       status: 'success',
       message_id: response.data?.key?.id || 'unknown',
+      messageId: response.data?.key?.id || 'unknown', // Adicione isso para compatibilidade
+      id: response.data?.key?.id || 'unknown', // Adicione isso para compatibilidade
+      type: 'whatsapp', // Adicione o tipo da mensagem
       data: response.data
     });
   } catch (error) {
-    console.error('Error sending WhatsApp message:', error.response?.data || error.message);
+    console.error('Error sending WhatsApp message:', error);
+    console.error('Error details:', error.response?.data || error.message);
+    
     res.status(500).send({ 
       status: 'error', 
       message: error.message,
