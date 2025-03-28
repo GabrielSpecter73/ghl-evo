@@ -263,7 +263,6 @@ app.post('/send', async (req, res) => {
     // Create request for Evolution API
     const requestData = {
       number: formattedNumber,  // Apenas o número
-      caption: message || '',
       options: {
         delay: 1200,
         presence: 'composing'
@@ -280,6 +279,8 @@ app.post('/send', async (req, res) => {
       const mediaApiUrl = `${EVOLUTION_API_URL}/message/sendMedia/${EVOLUTION_API_INSTANCE}`;
       console.log('URL para enviar mídia:', mediaApiUrl);
 
+      requestData.caption = message || '';
+      
       response = await axios.post(
         mediaApiUrl,
         requestData,
@@ -289,12 +290,18 @@ app.post('/send', async (req, res) => {
       // Código para enviar texto
       const textApiUrl = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_API_INSTANCE}`;
       console.log('URL para enviar texto:', textApiUrl);
-      
-      console.log('Enviando mensagem de texto:', JSON.stringify(requestData));
-      
+
+      // Simplificar a requisição para o formato exato que a API espera
+      const textRequestData = {
+        number: formattedNumber,  // Apenas o número, sem @s.whatsapp.net
+        text: message  // Usar 'text' em vez de 'caption' ou 'textMessage'
+      };
+
+      console.log('Enviando mensagem de texto:', JSON.stringify(textRequestData));
+
       response = await axios.post(
         textApiUrl,
-        requestData,
+        textRequestData,
         { headers: { 'apikey': EVOLUTION_API_KEY } }
       );
     }
