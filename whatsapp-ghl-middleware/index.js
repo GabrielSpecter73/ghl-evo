@@ -291,14 +291,16 @@ app.post('/send', async (req, res) => {
       const textApiUrl = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_API_INSTANCE}`;
       console.log('URL para enviar texto:', textApiUrl);
 
-      // Usar o formato específico da versão 1.8 da Evolution API
+      // Usar o formato completo conforme a documentação da versão 1.8
       const textRequestData = {
-        number: formattedNumber,  // Apenas o número, sem @s.whatsapp.net
+        number: formattedNumber,
         options: {
           delay: 1200,
           presence: "composing"
         },
-        textMessage: message  // Para versões mais antigas, use apenas esta linha
+        textMessage: {
+          text: message
+        }
       };
 
       console.log('Enviando mensagem de texto:', JSON.stringify(textRequestData));
