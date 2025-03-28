@@ -273,27 +273,36 @@ app.post('/send', async (req, res) => {
 
     let response;
 
-    // If media URL is provided, send media message
+    // Se o tipo de mídia for texto
     if (mediaUrl) {
-      requestData.mediaUrl = mediaUrl;
+      // Código para enviar mídia (ajuste o formato da URL também)
+      const mediaApiUrl = `${EVOLUTION_API_URL}/message/sendMedia/${EVOLUTION_API_INSTANCE}`;
+      console.log('URL para enviar mídia:', mediaApiUrl);
+
       requestData.caption = message || '';
-
-      console.log('Sending media message via Evolution API:', JSON.stringify(requestData));
-
+      
       response = await axios.post(
-        `${EVOLUTION_API_URL}/${EVOLUTION_API_INSTANCE}/message/sendMedia`,
+        mediaApiUrl,
         requestData,
         { headers: { 'apikey': EVOLUTION_API_KEY } }
       );
     } else {
-      // Text-only message
-      requestData.textMessage = message;
-
-      console.log('Sending text message via Evolution API:', JSON.stringify(requestData));
-
+      // Código para enviar texto
+      const textApiUrl = `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_API_INSTANCE}`;
+      console.log('URL para enviar texto:', textApiUrl);
+      
+      // Modificar o formato do requestData para alinhar com a documentação
+      const textRequestData = {
+        number: requestData.number,
+        text: message,
+        delay: requestData.options?.delay || 1000
+      };
+      
+      console.log('Enviando mensagem de texto:', JSON.stringify(textRequestData));
+      
       response = await axios.post(
-        `${EVOLUTION_API_URL}/${EVOLUTION_API_INSTANCE}/message/sendText`,
-        requestData,
+        textApiUrl,
+        textRequestData,
         { headers: { 'apikey': EVOLUTION_API_KEY } }
       );
     }
@@ -318,6 +327,44 @@ app.post('/send', async (req, res) => {
       message: error.message,
       details: error.response?.data
     });
+  }
+});
+
+// Endpoint para receber webhooks do GoHighLevel
+app.post('/webhook/ghl', async (req, res) => {
+  try {
+    console.log('Received webhook from GoHighLevel:', JSON.stringify(req.body));
+    
+    // Aqui você pode processar diferentes tipos de eventos
+    // Exemplo de estrutura básica para processar eventos
+    const eventData = req.body;
+    
+    // Identificar o tipo de evento (se disponível na estrutura de dados)
+    const eventType = eventData.type || eventData.eventType || 'unknown';
+    
+    console.log(`Processing GHL webhook event type: ${eventType}`);
+    
+    // Processar diferentes tipos de eventos
+    switch(eventType) {
+      case 'ContactCreate':
+      case 'ContactUpdate':
+      case 'ContactTagUpdate':
+        // Lógica específica para eventos de contato
+        console.log('Contact event received:', eventData);
+        break;
+        
+      // Adicionar outros casos conforme necessário
+      
+      default:
+        console.log('Unhandled event type:', eventType);
+        break;
+    }
+    
+    // Sempre responda ao webhook rapidamente
+    res.status(200).send({ status: 'success' });
+  } catch (error) {
+    console.error('Error processing GHL webhook:', error);
+    res.status(500).send({ status: 'error', message: error.message });
   }
 });
 
