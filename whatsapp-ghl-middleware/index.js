@@ -227,14 +227,18 @@ app.post('/send', async (req, res) => {
     // Log todos os campos para depuração
     console.log('Request body fields:', Object.keys(req.body));
     
-    const { to, message, mediaUrl, type } = req.body;
+    // Extrai os campos, aceitando 'to' ou 'phone' para o número
+    const { message, mediaUrl, type } = req.body;
+    const to = req.body.to || req.body.phone; // Aceitar qualquer um dos campos
+
+    console.log('Destination number:', to);
 
     // Validação de entrada aprimorada
     if (!to) {
-      console.log('Missing required field: to');
+      console.log('Missing required field: to/phone');
       return res.status(400).send({ 
         status: 'error', 
-        message: 'Missing required field: to' 
+        message: 'Missing required field: to/phone' 
       });
     }
 
